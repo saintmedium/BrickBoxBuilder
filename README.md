@@ -20,7 +20,7 @@
 
 <img width="239" height="703" alt="{C7D5D043-6041-4281-81CD-214722CEC54F}" src="https://github.com/user-attachments/assets/d65cef4d-56da-49ea-a9d6-acff214f8b1b" />
 
-Скачайте последнюю версию аддона: **[BrickBoxBuilder](https://raw.githubusercontent.com/saintmedium/BrickBoxBuilder/main/BrickBoxBuilder.py)**
+
 ⬇️ **Скачать аддон:**  
 [Правый клик → Save As](https://raw.githubusercontent.com/saintmedium/BrickBoxBuilder/main/BrickBoxBuilder.py)
 

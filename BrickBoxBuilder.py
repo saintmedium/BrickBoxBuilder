@@ -42,10 +42,10 @@ def update_total_blocks_count(props):
 def calculate_actual_box_size(props):
     """Вычисляет реальные размеры коробки с учетом швов"""
     # Ширина коробки (X): (количество блоков по ширине * длина блока) + (швы между блоками)
-    actual_width = (props.count_width * props.block_length) + ((props.count_width - 1) * props.seam_thick)
+    actual_width = (props.count_width * props.block_length) + ((props.count_width) * props.seam_thick) + props.block_width
     
     # Длина коробки (Y): (количество блоков по длине * длина блока) + (швы между блоками)
-    actual_length = (props.count_length * props.block_length) + ((props.count_length - 1) * props.seam_thick)
+    actual_length = (props.count_length * props.block_length) + ((props.count_length) * props.seam_thick) + props.block_width
     
     # Высота коробки (Z): (количество рядов * высота блока) + (швы между рядами)
     actual_height = (props.count_rows * props.block_height) + ((props.count_rows - 1) * props.seam_thick)
@@ -53,38 +53,23 @@ def calculate_actual_box_size(props):
     return actual_width, actual_length, actual_height
 
 
+def update_display_sizes(props):
+    """Обновляет отображаемые размеры коробки в свойствах"""
+    actual_width, actual_length, actual_height = calculate_actual_box_size(props)
+    props.display_width = actual_width
+    props.display_length = actual_length
+    props.display_height = actual_height
+
+
 # ===================== UPDATE FUNCTIONS =====================
-
-@safe_update
-def update_box_width(self, context, props):
-    """При изменении ширины коробки пересчитывает количество блоков"""
-    if props.block_width > 0 and props.block_length > 0:
-        # Корректируем с учетом швов
-        count = max(0, (props.box_width - props.block_width) / props.block_length)
-        props.count_width = max(1, ceil(count))
-
-
-@safe_update
-def update_box_length(self, context, props):
-    """При изменении длины коробки пересчитывает количество блоков"""
-    if props.block_width > 0 and props.block_length > 0:
-        count = max(0, (props.box_length - props.block_width) / props.block_length)
-        props.count_length = max(1, ceil(count))
-
-
-@safe_update
-def update_box_height(self, context, props):
-    """При изменении высоты коробки пересчитывает количество рядов"""
-    if props.block_height > 0:
-        count = props.box_height / props.block_height
-        props.count_rows = max(1, ceil(count))
-
 
 @safe_update
 def update_count_width(self, context, props):
     """При изменении количества блоков пересчитывает ширину коробки"""
     actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-    props.box_width = actual_width
+    props.display_width = actual_width
+    props.display_length = actual_length
+    props.display_height = actual_height
     update_total_blocks_count(props)
 
 
@@ -92,7 +77,9 @@ def update_count_width(self, context, props):
 def update_count_length(self, context, props):
     """При изменении количества блоков пересчитывает длину коробки"""
     actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-    props.box_length = actual_length
+    props.display_width = actual_width
+    props.display_length = actual_length
+    props.display_height = actual_height
     update_total_blocks_count(props)
 
 
@@ -100,7 +87,9 @@ def update_count_length(self, context, props):
 def update_count_rows(self, context, props):
     """При изменении количества рядов пересчитывает высоту коробки"""
     actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-    props.box_height = actual_height
+    props.display_width = actual_width
+    props.display_length = actual_length
+    props.display_height = actual_height
     update_total_blocks_count(props)
 
 
@@ -108,35 +97,27 @@ def update_count_rows(self, context, props):
 def update_block_width(self, context, props):
     """При изменении ширины блока пересчитывает размеры коробки"""
     if props.block_width > 0:
-        actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-        props.box_width = actual_width
-        props.box_length = actual_length
+        update_display_sizes(props)
 
 
 @safe_update
 def update_block_length(self, context, props):
     """При изменении длины блока пересчитывает размеры коробки"""
     if props.block_length > 0:
-        actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-        props.box_width = actual_width
-        props.box_length = actual_length
+        update_display_sizes(props)
 
 
 @safe_update
 def update_block_height(self, context, props):
     """При изменении высоты блока пересчитывает высоту коробки"""
     if props.block_height > 0:
-        actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-        props.box_height = actual_height
+        update_display_sizes(props)
 
 
 @safe_update
 def update_seam_thick(self, context, props):
     """При изменении толщины шва пересчитывает все размеры коробки"""
-    actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-    props.box_width = actual_width
-    props.box_length = actual_length
-    props.box_height = actual_height
+    update_display_sizes(props)
 
 
 # ===================== BLOCK CREATION =====================
@@ -320,15 +301,11 @@ class OT_PlaceBlockGrid(bpy.types.Operator):
                 block.location = (x_position, wall4_start_y, z_offset)
                 block.rotation_euler.z = radians(270)
         
-        # Пересчитываем и обновляем размеры коробки с учетом швов после создания
+        # Обновляем отображаемые размеры коробки с учетом швов после создания
         actual_width, actual_length, actual_height = calculate_actual_box_size(props)
-        
-        # Обновляем свойства коробки (без рекурсии)
-        props.is_updating = True
-        props.box_width = actual_width
-        props.box_length = actual_length
-        props.box_height = actual_height
-        props.is_updating = False
+        props.display_width = actual_width
+        props.display_length = actual_length
+        props.display_height = actual_height
         
         update_total_blocks_count(props)
         
@@ -353,35 +330,23 @@ class BlockGridProperties(bpy.types.PropertyGroup):
         description="Имя коллекции для хранения блоков"
     )
     
-    # Размеры коробки
-    box_width: bpy.props.FloatProperty(
+    # Отображаемые размеры коробки (только для чтения)
+    display_width: bpy.props.FloatProperty(
         name="Ширина коробки (X)",
         default=2.2,
-        min=0.1,
-        step=0.1,
-        precision=3,
-        description="Общая ширина коробки",
-        update=update_box_width
+        description="Общая ширина коробки (вычисляется автоматически)"
     )
     
-    box_length: bpy.props.FloatProperty(
+    display_length: bpy.props.FloatProperty(
         name="Длина коробки (Y)",
         default=2.2,
-        min=0.1,
-        step=0.1,
-        precision=3,
-        description="Общая длина коробки",
-        update=update_box_length
+        description="Общая длина коробки (вычисляется автоматически)"
     )
     
-    box_height: bpy.props.FloatProperty(
+    display_height: bpy.props.FloatProperty(
         name="Высота коробки (Z)",
         default=0.2,
-        min=0.1,
-        step=0.1,
-        precision=3,
-        description="Общая высота коробки",
-        update=update_box_height
+        description="Общая высота коробки (вычисляется автоматически)"
     )
     
     # Размеры блока
@@ -500,12 +465,18 @@ class VIEW3D_PT_BlockPanel(bpy.types.Panel):
         layout.prop(props, "collection_name")
         layout.separator()
         
-        # Размеры коробки
+        # Размеры коробки (только для чтения)
         box = layout.box()
         box.label(text="Размеры коробки:", icon="MESH_CUBE")
-        box.prop(props, "box_width")
-        box.prop(props, "box_length")
-        box.prop(props, "box_height")
+        row = box.row()
+        row.enabled = False  # Делаем поля только для чтения
+        row.prop(props, "display_width")
+        row = box.row()
+        row.enabled = False
+        row.prop(props, "display_length")
+        row = box.row()
+        row.enabled = False
+        row.prop(props, "display_height")
         
         layout.separator(factor=0.5)
         
@@ -571,6 +542,16 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.block_grid_props = bpy.props.PointerProperty(type=BlockGridProperties)
+    
+    # Инициализируем отображаемые размеры
+    def init_props():
+        props = bpy.context.scene.block_grid_props
+        if props:
+            update_display_sizes(props)
+            update_total_blocks_count(props)
+    
+    # Отложенная инициализация
+    bpy.app.timers.register(lambda: init_props() or None, first_interval=0.1)
 
 
 def unregister():
